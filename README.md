@@ -115,6 +115,8 @@ tests/
 
 成功發布的實際網址應以 Actions 的 deployment 輸出或 Settings → Pages 為準；工作流程檔案存在或推送成功都不代表網站已上線。
 
+網站尚未啟用時，也可從儲存庫下載 `preview/yongqing-preview.zip`，解壓縮後以桌面 Chrome／Edge 開啟其中的 HTML；這個離線原型不需要 Node.js。
+
 接下來應先由使用者測試方向盤速度、倒車反應、駕駛視野與後照鏡，再進入 Milestone 2 的方向感課程。Milestone 3 才依資訊足夠的影片製作第一個真實關卡。
 
 待分析的使用者提供來源：
