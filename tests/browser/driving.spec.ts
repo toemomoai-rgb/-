@@ -124,3 +124,29 @@ test('narrow layout has no horizontal overflow and still exposes the simulator',
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: '.local/mobile.png', fullPage: true });
 });
+
+test('hood framing calibration persists and coach notes distinguish unverified source text', async ({ page }) => {
+  await openSimulator(page);
+  await page.getByRole('button', { name: '視野校正', exact: true }).click();
+  await page.getByRole('button', { name: '完整車頭視野預設', exact: true }).click();
+  await page.getByRole('slider', { name: '引擎蓋長度', exact: true }).fill('1.5');
+  await page.getByRole('slider', { name: '視線向下角度', exact: true }).fill('10');
+  await page.getByRole('button', { name: '套用並儲存', exact: true }).click();
+  await page.keyboard.press('Escape');
+  await page.reload(); await expect(page.locator('canvas')).toBeVisible();
+  await page.getByRole('button', { name: '視野校正', exact: true }).click();
+  await expect(page.getByRole('slider', { name: '引擎蓋長度', exact: true })).toHaveValue('1.5');
+  await expect(page.getByRole('slider', { name: '視線向下角度', exact: true })).toHaveValue('10');
+  await page.keyboard.press('Escape');
+  await page.getByRole('button', { name: '教練筆記', exact: true }).click();
+  await expect(page.getByRole('dialog')).toContainText('左、左、右、右');
+  await expect(page.getByRole('dialog')).toContainText('右、左、右');
+  await expect(page.getByRole('dialog')).toContainText('目前不會觸發轉向提示');
+  await expect(page.locator('.coach-note')).toHaveCount(2);
+  await expect(page.locator('.coach-note').first()).toContainText('尚未對應');
+  await page.getByLabel('選擇本機教練影片').setInputFiles({ name: 'invalid.txt', mimeType: 'text/plain', buffer: Buffer.from('not a video') });
+  await expect(page.getByRole('alert')).toContainText('請選擇 MP4');
+  await page.keyboard.press('Escape');
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '繼續練習', exact: true })).toBeVisible();
+});

@@ -9,6 +9,7 @@ import { steeringLabel } from '../simulation/SteeringSystem';
 import type { Gear, View } from '../simulation/types';
 import CalibrationPanel from './CalibrationPanel';
 import SteeringWheel from './SteeringWheel';
+import CoachNotebook from './CoachNotebook';
 
 const views: { id: View; label: string; key: string }[] = [
   { id: 'driver', label: '駕駛座', key: '1' }, { id: 'left', label: '左後照鏡', key: '2' },
@@ -29,6 +30,7 @@ export default function App() {
   const [config, setConfig] = useState<CarConfig>(loadCarConfig);
   const [calibration, setCalibration] = useState(false);
   const [shortcuts, setShortcuts] = useState(false);
+  const [notebook, setNotebook] = useState(false);
   const [message, setMessage] = useState('');
   const [failure, setFailure] = useState('');
   const [practice, setPractice] = useState(false);
@@ -50,11 +52,11 @@ export default function App() {
   }, []);
   useEffect(() => { if (!message) return; const timeout = setTimeout(() => setMessage(''), 5500); return () => clearTimeout(timeout); }, [message]);
   useEffect(() => {
-    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') { setCalibration(false); setShortcuts(false); setOptions(false); } };
+    const escape = (e: KeyboardEvent) => { if (e.key === 'Escape') { setCalibration(false); setShortcuts(false); setNotebook(false); setOptions(false); } };
     window.addEventListener('keydown', escape); return () => window.removeEventListener('keydown', escape);
   }, []);
   useEffect(() => {
-    const opened = calibration || shortcuts;
+    const opened = calibration || shortcuts || notebook;
     if (sim.current) { sim.current.controlsEnabled = !opened; if (opened) sim.current.input.clear(); }
     if (!opened) return;
     const previous = document.activeElement;
@@ -69,11 +71,11 @@ export default function App() {
     };
     document.addEventListener('keydown', trap);
     return () => { document.removeEventListener('keydown', trap); if (previous instanceof HTMLElement) previous.focus(); };
-  }, [calibration, shortcuts]);
+  }, [calibration, shortcuts, notebook]);
   // Dialogs are safe places to read and adjust settings, without the vehicle creeping.
-  const openDialog = (which: 'calibration' | 'shortcuts') => {
+  const openDialog = (which: 'calibration' | 'shortcuts' | 'notebook') => {
     if (sim.current && !sim.current.paused) sim.current.togglePause();
-    if (which === 'calibration') setCalibration(true); else setShortcuts(true);
+    if (which === 'calibration') setCalibration(true); else if (which === 'notebook') setNotebook(true); else setShortcuts(true);
   };
   const lesson = currentLesson(telemetry);
   const brakeHold = sim.current?.input.brakeHold ?? true;
@@ -82,12 +84,13 @@ export default function App() {
   const changeView = (view: View) => sim.current?.setView(view);
 
   return <div className="app-shell">
-    <aside className="sidebar" inert={calibration || shortcuts}>
+    <aside className="sidebar" inert={calibration || shortcuts || notebook}>
       <a className="brand" href="#" onClick={e => { e.preventDefault(); changeView('driver'); }}><span className="brand-mark"><CarFront size={25} strokeWidth={1.7}/></span><span>永慶駕訓班<small>YONGQING DRIVING</small></span></a>
       <div className="workspace-label">我的駕駛教室 <span>練習版</span></div>
       <nav aria-label="練習導覽"><div className="nav-section-label">開始練習</div>
         <button className={`nav-item ${!practice ? 'active' : ''}`} onClick={() => setPractice(false)}><BookOpen size={18}/><span>基本操作教學</span><ChevronRight size={15}/></button>
         <button className={`nav-item ${practice ? 'active' : ''}`} onClick={() => setPractice(true)}><Compass size={18}/><span>自由練習</span></button>
+        <button className="nav-item" onClick={() => openDialog('notebook')}><BookOpen size={18}/><span>教練影片與口訣</span></button>
         <div className="nav-section-label next-section">後續課程</div>
         <div className="nav-unavailable"><TrafficCone size={18}/><span>單項關卡</span><small>準備中</small></div>
         <div className="nav-unavailable"><ShieldCheck size={18}/><span>完整場考</span><small>準備中</small></div>
@@ -96,7 +99,7 @@ export default function App() {
       <div className="sidebar-bottom"><span className="online-dot"/>本機練習 · 無需登入<small>核心原型 v0.1</small></div>
     </aside>
 
-    <div className="main-shell" inert={calibration || shortcuts}><header className="topbar"><div className="breadcrumb">駕駛教室<ChevronRight size={14}/><span>{practice ? '自由練習' : '基本操作教學'}</span></div><div className="header-actions"><button onClick={() => openDialog('shortcuts')}><Keyboard size={17}/><span>操作說明</span></button><span className="header-divider"/><button onClick={() => openDialog('calibration')}><SlidersHorizontal size={17}/><span>視野校正</span></button></div></header>
+    <div className="main-shell" inert={calibration || shortcuts || notebook}><header className="topbar"><div className="breadcrumb">駕駛教室<ChevronRight size={14}/><span>{practice ? '自由練習' : '基本操作教學'}</span></div><div className="header-actions"><button className="notebook-header-button" onClick={() => openDialog('notebook')}><BookOpen size={17}/><span>教練筆記</span></button><button onClick={() => openDialog('shortcuts')}><Keyboard size={17}/><span>操作說明</span></button><span className="header-divider"/><button onClick={() => openDialog('calibration')}><SlidersHorizontal size={17}/><span>視野校正</span></button></div></header>
       <main>
         <div className="page-heading"><div><div className="eyebrow"><span/>從基本開始，建立駕駛感覺</div><h1>{practice ? '留一點空間，自己練習。' : '慢慢練，找到你的方向感。'}</h1><p>熟悉方向盤、感受車身移動，從駕駛座的視角開始。</p></div><div className="course-badge"><span className="badge-icon"><CarFront size={21}/></span><div>自排汽車<small>核心操作練習</small></div></div></div>
 
@@ -132,6 +135,7 @@ export default function App() {
       </main>
     </div>
     {message && <div className="toast" role="status"><Info size={18}/><span>{message}</span><button aria-label="關閉提示" onClick={() => setMessage('')}><X size={15}/></button></div>}
+    {notebook && <CoachNotebook onClose={() => setNotebook(false)}/>}
     {calibration && <CalibrationPanel config={config} onApply={next => { setConfig(next); sim.current?.configure(next); if (sim.current && !sim.current.paused) sim.current.togglePause(); }} onClose={() => setCalibration(false)}/>}
     {shortcuts && <div className="modal-backdrop" onClick={() => setShortcuts(false)}><section className="shortcuts modal" role="dialog" aria-modal="true" aria-labelledby="shortcuts-title" onClick={e => e.stopPropagation()}><header><div className="modal-icon"><Keyboard size={22}/></div><div><h2 id="shortcuts-title">先熟悉操作，再慢慢出發</h2><p>按住轉向，放開後方向盤會保持原位</p></div><button className="icon-button close" aria-label="關閉操作說明" onClick={() => setShortcuts(false)}><X size={20}/></button></header><div className="shortcut-list">{[['W', '按住，輕踩油門'], ['S / Space', '按住，煞車'], ['A / D', '按住，向左／右轉方向盤'], ['C', '按住，逐漸回正方向盤'], ['R / F', '煞停並保持煞車後，排入 R／D'], ['Q / E', '左／右方向燈，再按一次關閉'], ['1 / 4', '駕駛座／俯視教學'], ['按住 2 / 3', '暫時放大左／右後照鏡']].map(([key, text]) => <div key={key}><kbd>{key}</kbd><span>{text}</span></div>)}</div><div className="shortcut-note"><Info size={16}/><p>不踩油門也會緩慢蠕行。換檔前請先煞停。離開視窗會自動暫停並啟用煞車保持。</p></div><footer><button className="primary-button" onClick={() => setShortcuts(false)}>了解，開始觀察<ArrowRight size={16}/></button></footer></section></div>}
   </div>;

@@ -9,6 +9,11 @@ export interface CarConfig {
   driverEyePosition: [number, number, number];
   mirrorPosition: [number, number, number];
   driverFov: number;
+  driverPitch: number;
+  hoodLength: number;
+  hoodHeight: number;
+  washerSpacing: number;
+  washerDepthRatio: number;
   mirrorFov: number;
   leftMirrorYaw: number;
   rightMirrorYaw: number;
@@ -22,9 +27,12 @@ export const defaultCarConfig: CarConfig = {
   carLength: 4.5, carWidth: 1.74, wheelbase: 2.6,
   frontOverhang: 1.0, rearOverhang: 0.9,
   maxSteeringAngle: 34, steeringRatio: 16,
-  driverEyePosition: [-0.34, 1.25, -1.7],
+  driverEyePosition: [-0.34, 1.38, -1.15],
   mirrorPosition: [0.99, 1.06, -2.0],
-  driverFov: 63, mirrorFov: 49,
+  driverFov: 67, driverPitch: 8,
+  hoodLength: 1.35, hoodHeight: 0.98,
+  washerSpacing: 0.78, washerDepthRatio: 0.81,
+  mirrorFov: 49,
   leftMirrorYaw: 18, rightMirrorYaw: 18, mirrorPitch: 14,
   steeringSpeed: 250,
 };
@@ -46,9 +54,14 @@ export function sanitizeConfig(raw: Partial<CarConfig>): CarConfig {
     frontOverhang: length - wheelbase - rear,
     maxSteeringAngle: inRange(raw.maxSteeringAngle, d.maxSteeringAngle, 20, 42),
     steeringRatio: inRange(raw.steeringRatio, d.steeringRatio, 12, 20),
-    driverEyePosition: [inRange(eye[0], d.driverEyePosition[0], -0.6, -0.1), inRange(eye[1], d.driverEyePosition[1], 0.95, 1.65), inRange(eye[2], d.driverEyePosition[2], -2.15, -1.1)],
+    driverEyePosition: [inRange(eye[0], d.driverEyePosition[0], -0.6, -0.1), inRange(eye[1], d.driverEyePosition[1], 0.95, 1.65), inRange(eye[2], d.driverEyePosition[2], -2.15, -0.9)],
     mirrorPosition: [Math.max(width / 2 + 0.04, inRange(mirror[0], d.mirrorPosition[0], 0.8, 1.2)), inRange(mirror[1], d.mirrorPosition[1], 0.9, 1.4), inRange(mirror[2], d.mirrorPosition[2], -2.4, -1.7)],
     driverFov: inRange(raw.driverFov, d.driverFov, 40, 90),
+    driverPitch: inRange(raw.driverPitch, d.driverPitch, -4, 18),
+    hoodLength: inRange(raw.hoodLength, d.hoodLength, 0.8, 1.8),
+    hoodHeight: inRange(raw.hoodHeight, d.hoodHeight, 0.86, 1.1),
+    washerSpacing: inRange(raw.washerSpacing, d.washerSpacing, 0.4, width * 0.7),
+    washerDepthRatio: inRange(raw.washerDepthRatio, d.washerDepthRatio, 0.55, 0.93),
     mirrorFov: inRange(raw.mirrorFov, d.mirrorFov, 30, 75),
     leftMirrorYaw: inRange(raw.leftMirrorYaw, d.leftMirrorYaw, 0, 35),
     rightMirrorYaw: inRange(raw.rightMirrorYaw, d.rightMirrorYaw, 0, 35),

@@ -228,6 +228,8 @@ export class Simulator {
     }
     this.renderer.setRenderTarget(null); this.renderer.setViewport(0, 0, width, height);
     this.renderer.setScissorTest(false); this.renderer.clear(); this.renderer.render(this.scene, this.cameras.get(this.view));
+    // A translucent top-view teaching aid must not make the real mirror views translucent.
+    this.car.setTransparency(false);
     this.mirrors.render(this.renderer, this.scene, rects);
   };
   getDebug() {

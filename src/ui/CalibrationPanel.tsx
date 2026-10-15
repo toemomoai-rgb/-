@@ -18,10 +18,20 @@ export default function CalibrationPanel({ config, onApply, onClose }: Props) {
     <header><div className="modal-icon"><SlidersHorizontal size={22}/></div><div><h2 id="calibration-title">調整成你的駕駛視野</h2><p>校正模式 · 僅儲存在這台瀏覽器</p></div><button className="icon-button close" aria-label="關閉校正面板" onClick={onClose}><X size={20}/></button></header>
     <div className="calibration-scroll"><div className="calibration-note">目前使用示意車輛與測試場地，尚未依教練影片校正。套用設定會將車輛放回起點。</div>
       <h3>駕駛座視野</h3>
+      <button className="hood-preset-button" onClick={() => {
+        setDraft(d => ({ ...d, driverEyePosition: [...defaultCarConfig.driverEyePosition], driverFov: defaultCarConfig.driverFov, driverPitch: defaultCarConfig.driverPitch })); setSaved(false);
+      }}><SlidersHorizontal size={14}/>完整車頭視野預設</button>
+      <p className="small-note">讓左右車頭邊角與雨刷噴頭入鏡的觀察設定；仍需依教練車視野校正。</p>
       {slider('視線高度', draft.driverEyePosition[1], .95, 1.65, .01, ' m', v => vector('driverEyePosition', 1, v))}
-      {slider('座椅前後位置', draft.driverEyePosition[2], -2.15, -1.1, .01, ' m', v => vector('driverEyePosition', 2, v))}
+      {slider('座椅前後位置', draft.driverEyePosition[2], -2.15, -0.9, .01, ' m', v => vector('driverEyePosition', 2, v))}
       {slider('座椅左右位置', draft.driverEyePosition[0], -.6, -.1, .01, ' m', v => vector('driverEyePosition', 0, v))}
       {slider('前方視野 FOV', draft.driverFov, 40, 90, 1, '°', v => set('driverFov', v))}
+      {slider('視線向下角度', draft.driverPitch, -4, 18, 1, '°', v => set('driverPitch', v))}
+      <h3>引擎蓋與雨刷噴頭</h3>
+      {slider('引擎蓋長度', draft.hoodLength, .8, 1.8, .01, ' m', v => set('hoodLength', v))}
+      {slider('引擎蓋後緣高度', draft.hoodHeight, .86, 1.1, .01, ' m', v => set('hoodHeight', v))}
+      {slider('兩個噴頭間距', draft.washerSpacing, .4, draft.carWidth * .7, .01, ' m', v => set('washerSpacing', v))}
+      {slider('噴頭前後位置比例', draft.washerDepthRatio, .55, .93, .01, '', v => set('washerDepthRatio', v))}
       <h3>左右後照鏡</h3>
       {slider('左鏡向外角度', draft.leftMirrorYaw, 0, 35, 1, '°', v => set('leftMirrorYaw', v))}
       {slider('右鏡向外角度', draft.rightMirrorYaw, 0, 35, 1, '°', v => set('rightMirrorYaw', v))}

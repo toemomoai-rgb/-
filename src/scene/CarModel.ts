@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import type { CarConfig } from '../config/carConfig';
 import type { CarState } from '../simulation/types';
 import { radians } from '../simulation/SteeringSystem';
+import { createHood } from './HoodModel';
 
 export class CarModel {
   root = new THREE.Group();
@@ -9,14 +10,17 @@ export class CarModel {
   tires: THREE.Mesh[] = [];
   collision: THREE.BoxHelper;
   private body: THREE.Mesh;
+  private paintMaterials: THREE.MeshStandardMaterial[];
   constructor(config: CarConfig) {
     const paint = new THREE.MeshStandardMaterial({ color: '#cedcd9', roughness: 0.38, metalness: 0.22 });
+    const hoodPaint = paint.clone();
     const glass = new THREE.MeshStandardMaterial({ color: '#466166', roughness: 0.22, metalness: 0.3 });
+    this.paintMaterials = [paint, hoodPaint, glass];
     const tire = new THREE.MeshStandardMaterial({ color: '#303635', roughness: 0.95 });
     const hub = new THREE.MeshStandardMaterial({ color: '#a7b3b0', metalness: 0.5, roughness: 0.4 });
     const bodyCenter = config.rearOverhang - config.carLength / 2;
-    this.body = new THREE.Mesh(new THREE.BoxGeometry(config.carWidth, 0.62, config.carLength), paint);
-    this.body.position.set(0, 0.63, bodyCenter); this.root.add(this.body);
+    this.body = new THREE.Mesh(new THREE.BoxGeometry(config.carWidth, 0.5, config.carLength), paint);
+    this.body.position.set(0, 0.56, bodyCenter); this.root.add(this.body);
     const cabin = new THREE.Mesh(new THREE.BoxGeometry(config.carWidth * 0.85, 0.57, config.wheelbase * 0.72), glass);
     cabin.position.set(0, 1.18, -config.wheelbase * 0.44); this.root.add(cabin);
     const roof = new THREE.Mesh(new THREE.BoxGeometry(config.carWidth * 0.86, 0.08, config.wheelbase * 0.5), paint);
@@ -47,10 +51,7 @@ export class CarModel {
       rear.position.set(side * config.carWidth * 0.32, 0.74, config.rearOverhang + 0.01); this.root.add(rear);
     }
     this.root.traverse(object => { object.layers.set(1); if (object instanceof THREE.Mesh) { object.castShadow = true; object.receiveShadow = true; } });
-    // Driver can see the real hood but not the simplified exterior cabin.
-    const hood = new THREE.Mesh(new THREE.BoxGeometry(config.carWidth * 0.96, 0.06, config.frontOverhang + 0.6), paint);
-    hood.position.set(0, 0.92, frontZ + (config.frontOverhang + 0.6) / 2);
-    hood.layers.set(2); this.root.add(hood);
+    this.root.add(createHood(config, hoodPaint));
     this.collision = new THREE.BoxHelper(this.body, '#d99b56'); this.collision.visible = false;
     this.collision.layers.set(0);
   }
@@ -62,12 +63,13 @@ export class CarModel {
       (t.userData.cap as THREE.Mesh).rotation.x = t.rotation.x;
       (t.userData.spoke as THREE.Mesh).rotation.x = t.rotation.x;
     });
-    this.root.traverse(o => {
-      if (o instanceof THREE.Mesh && o.material instanceof THREE.MeshStandardMaterial && o.material.color.getHexString() === 'cedcd9') {
-        o.material.transparent = transparent; o.material.opacity = transparent ? 0.35 : 1;
-        o.material.depthWrite = !transparent;
-      }
-    });
+    this.setTransparency(transparent);
     this.collision.visible = debug; if (debug) this.collision.update();
+  }
+  setTransparency(transparent: boolean) {
+    this.paintMaterials.forEach(material => {
+      material.transparent = transparent; material.opacity = transparent ? 0.28 : 1;
+      material.depthWrite = !transparent;
+    });
   }
 }
